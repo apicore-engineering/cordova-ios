@@ -1,4 +1,4 @@
-/**
+/*
     Licensed to the Apache Software Foundation (ASF) under one
     or more contributor license agreements.  See the NOTICE file
     distributed with this work for additional information
@@ -7,7 +7,7 @@
     "License"); you may not use this file except in compliance
     with the License.  You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+        http://www.apache.org/licenses/LICENSE-2.0
 
     Unless required by applicable law or agreed to in writing,
     software distributed under the License is distributed on an
@@ -89,6 +89,7 @@ describe('ios plugin handler', () => {
 
             beforeEach(() => {
                 spyOn(dummyProject.xcode, 'addSourceFile');
+                dummyProject.xcode.updateBuildProperty('PRODUCT_NAME', '"TestCordovaApp"', null, 'App');
             });
 
             it('Test 001 : should throw if source-file src cannot be found', () => {
@@ -136,6 +137,15 @@ describe('ios plugin handler', () => {
                 install(source[0], dummyPluginInfo, dummyProject);
                 expect(dummyProject.xcode.addFramework)
                     .toHaveBeenCalledWith(path.join('App', 'Plugins', dummy_id, 'SourceWithFramework.m'), { weak: false });
+            });
+
+            it('should update library search paths when element has framework=true set', () => {
+                const source = copyArray(valid_source).filter(s => s.framework);
+
+                spyOn(dummyProject.xcode, 'addFramework');
+                install(source[0], dummyPluginInfo, dummyProject);
+
+                expect(dummyProject.xcode.getBuildProperty('LIBRARY_SEARCH_PATHS', undefined, 'App')).toContain(`"$(SRCROOT)/$(TARGET_NAME)/Plugins/${dummy_id}"`);
             });
 
             it('should not add source files for SPM plugins', () => {

@@ -1,21 +1,21 @@
 /*
- Licensed to the Apache Software Foundation (ASF) under one
- or more contributor license agreements.  See the NOTICE file
- distributed with this work for additional information
- regarding copyright ownership.  The ASF licenses this file
- to you under the Apache License, Version 2.0 (the
- "License"); you may not use this file except in compliance
- with the License.  You may obtain a copy of the License at
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements.  See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership.  The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License.  You may obtain a copy of the License at
 
- http://www.apache.org/licenses/LICENSE-2.0
+        http://www.apache.org/licenses/LICENSE-2.0
 
- Unless required by applicable law or agreed to in writing,
- software distributed under the License is distributed on an
- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- KIND, either express or implied.  See the License for the
- specific language governing permissions and limitations
- under the License.
- */
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied.  See the License for the
+    specific language governing permissions and limitations
+    under the License.
+*/
 
 
 #import "CDVURLSchemeHandler.h"
@@ -179,12 +179,15 @@ static const NSUInteger FILE_BUFFER_SIZE = 1024 * 1024 * 4; // 4 MiB
         plugin = [self.handlerMap objectForKey:urlSchemeTask];
     }
 
-    if (![plugin isEqual:[NSNull null]] && [plugin respondsToSelector:@selector(stopSchemeTask:)]) {
-        [plugin stopSchemeTask:urlSchemeTask];
-    }
-
     @synchronized(self.handlerMap) {
         [self.handlerMap removeObjectForKey:urlSchemeTask];
+    }
+
+    if ([plugin isEqual:[NSNull null]]) {
+        // NSNull means we own this task, so we need to mark it as finished
+        [urlSchemeTask didFinish];
+    } else if ([plugin respondsToSelector:@selector(stopSchemeTask:)]) {
+        [plugin stopSchemeTask:urlSchemeTask];
     }
 }
 
@@ -197,7 +200,7 @@ static const NSUInteger FILE_BUFFER_SIZE = 1024 * 1024 * 4; // 4 MiB
 
     if ([url.path hasPrefix:@"/_app_file_"]) {
         NSString *path = [url.path stringByReplacingOccurrencesOfString:@"/_app_file_" withString:@""];
-        filePath = [resDir URLByAppendingPathComponent:path];
+        filePath = [NSURL fileURLWithPath:path relativeToURL:resDir];
     } else {
         if ([url.path isEqualToString:@""] || [url.pathExtension isEqualToString:@""]) {
             filePath = [resDir URLByAppendingPathComponent:self.viewController.startPage];
